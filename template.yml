@@ -1,0 +1,53 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Converts SSM parameter path prefixes into a S3 archive for config deployments
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+Parameters:
+  ParameterPattern:
+    Description: The SSM path parameter prefix
+    Type: String
+  DestinationBucket:
+    Description: The destination S3 bucket
+    Type: String
+
+Resources:
+  CopyConfigurationIntoS3:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/hello-from-lambda.index
+      Runtime: nodejs10.x
+      MemorySize: 512
+      Timeout: 300
+      Description: Function to copy SSM changes into a S3 bucket
+      Environment:
+        Variables:
+          NAME_PREFIX:
+            Ref: ParameterPattern
+          DESTINATION_BUCKET:
+            Ref: DestinationBucket
+      Events:
+        ParameterChangeRule:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+              - aws.ssm
+              detail-type:
+              - Parameter Store Change
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName:
+            Ref: ParameterPattern
+      - S3CrudPolicy:
+          BucketName:
+            Ref: DestinationBucket
