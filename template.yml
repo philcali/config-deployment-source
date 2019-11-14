@@ -24,7 +24,7 @@ Resources:
   CopyConfigurationIntoS3:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/hello-from-lambda.index
+      Handler: src/handlers/copyConfig.index
       Runtime: nodejs10.x
       MemorySize: 512
       Timeout: 300
